@@ -1,0 +1,14 @@
+{% extends 'graph/base.html' %}
+{% load static %}
+
+{% block content %}
+
+    {% include 'graph/viewer/blocks/toolbar.html' %}
+    {% include 'graph/viewer/blocks/query-constructor.html' %}
+    {% include 'graph/viewer/blocks/paths-table.html' %}
+    {% include 'graph/viewer/blocks/path-info.html' %}
+
+    <div id="graph-container"></div>
+
+    <script type="text/javascript" src="{% static 'graph/js/viewer.js' %}"></script>
+{% endblock %}

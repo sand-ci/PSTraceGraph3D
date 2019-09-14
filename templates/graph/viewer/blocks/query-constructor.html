@@ -1,0 +1,203 @@
+<div id="query-constructor" class="ps-menu" data-opened="true">
+    <div class="ps-menu-label">
+        <h2>Query constructor</h2>
+    </div>
+    <div class="close-tab">
+        <div class="plaster"></div>
+        <button class="simple-button transition-2 ps-menu-btn left"><i class="fa fa-chevron-left"></i></button>
+    </div>
+    <div class="ps-menu-wrapper ps-container column-space-between">
+        <div>
+            <div id="datetime-range-form" class="query-item">
+                <h3>Datetime range</h3>
+                <div class="query-item-wrapper">
+                    <div class="datetime-group">
+                        <label for="from-datetime-input">From:</label>
+                        <div class='input-group date' id='from-datetime'>
+                            <input id="from-datetime-input" type='text' class="form-control" />
+                            <span class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="datetime-group">
+                        <label for="to-datetime-input">To:</label>
+                        <div class='input-group date' id='to-datetime'>
+                            <input id="to-datetime-input" type='text' class="form-control" />
+                            <span class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="filters-accordion" class="panel-group">
+                <div id="src-filter-form" class="panel panel-default query-item">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#filters-accordion" href="#src-filter-collapse">Source</a>
+                        </h3>
+                        <span class="filter-indicator" onclick="EmptyBucket(this)">0</span>
+                    </div>
+                    <div id="src-filter-collapse" class="panel-collapse collapse in">
+                        <div class="panel-body query-item-wrapper">
+                            <div id="src-bucket" class="bucket">
+                                <div class="bucket-scroll" data-simplebar>
+                                    <div class="bucket-wrapper" data-bucket-name="src"></div>
+                                </div>
+                            </div>
+                            <table id="src-bucket-table" class="ps-datatable">
+                                <thead>
+                                    <tr>
+                                        <th class="cursor-default table-header">Src</th>
+                                        <th class="cursor-default table-header">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="src_site-filter-form" class="panel panel-default query-item">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#filters-accordion" href="#src_site-filter-collapse">Source site</a>
+                        </h3>
+                        <span class="filter-indicator" onclick="EmptyBucket(this)">0</span>
+                    </div>
+                    <div id="src_site-filter-collapse" class="panel-collapse collapse">
+                        <div class="panel-body query-item-wrapper">
+                            <div id="src_site-bucket" class="bucket">
+                                <div class="bucket-scroll" data-simplebar>
+                                    <div class="bucket-wrapper" data-bucket-name="src_site"></div>
+                                </div>
+                            </div>
+                            <table id="src_site-bucket-table" class="ps-datatable">
+                                <thead>
+                                    <tr>
+                                        <th class="cursor-default table-header">Src site</th>
+                                        <th class="cursor-default table-header">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="src_host-filter-form" class="panel panel-default query-item">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#filters-accordion" href="#src_host-filter-collapse">Source host</a>
+                        </h3>
+                        <span class="filter-indicator" onclick="EmptyBucket(this)">0</span>
+                    </div>
+                    <div id="src_host-filter-collapse" class="panel-collapse collapse">
+                        <div class="panel-body query-item-wrapper">
+                            <div id="src_host-bucket" class="bucket">
+                                <div class="bucket-scroll" data-simplebar>
+                                    <div class="bucket-wrapper" data-bucket-name="src_host"></div>
+                                </div>
+                            </div>
+                            <table id="src_host-bucket-table" class="ps-datatable">
+                                <thead>
+                                    <tr>
+                                        <th class="cursor-default table-header">Src host</th>
+                                        <th class="cursor-default table-header">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="dest-filter-form" class="panel panel-default query-item">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#filters-accordion" href="#dest-filter-collapse">Destination</a>
+                        </h3>
+                        <span class="filter-indicator" onclick="EmptyBucket(this)">0</span>
+                    </div>
+                    <div id="dest-filter-collapse" class="panel-collapse collapse">
+                        <div class="panel-body query-item-wrapper">
+                            <div id="dest-bucket" class="bucket">
+                                <div class="bucket-scroll" data-simplebar>
+                                    <div class="bucket-wrapper" data-bucket-name="dest"></div>
+                                </div>
+                            </div>
+                            <table id="dest-bucket-table" class="ps-datatable">
+                                <thead>
+                                    <tr>
+                                        <th class="cursor-default table-header">Dest</th>
+                                        <th class="cursor-default table-header">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="dest_site-filter-form" class="panel panel-default query-item">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#filters-accordion" href="#dest_site-filter-collapse">Destination site</a>
+                        </h3>
+                        <span class="filter-indicator" onclick="EmptyBucket(this)">0</span>
+                    </div>
+                    <div id="dest_site-filter-collapse" class="panel-collapse collapse">
+                        <div class="panel-body query-item-wrapper">
+                            <div id="dest_site-bucket" class="bucket">
+                                <div class="bucket-scroll" data-simplebar>
+                                    <div class="bucket-wrapper" data-bucket-name="dest_site"></div>
+                                </div>
+                            </div>
+                            <table id="dest_site-bucket-table" class="ps-datatable">
+                                <thead>
+                                    <tr>
+                                        <th class="cursor-default table-header">Dest site</th>
+                                        <th class="cursor-default table-header">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="dest_host-filter-form" class="panel panel-default query-item">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#filters-accordion" href="#dest_host-filter-collapse">Destination host</a>
+                        </h3>
+                        <span class="filter-indicator" onclick="EmptyBucket(this)">0</span>
+                    </div>
+                    <div id="dest_host-filter-collapse" class="panel-collapse collapse">
+                        <div class="panel-body query-item-wrapper">
+                            <div id="dest_host-bucket" class="bucket">
+                                <div class="bucket-scroll" data-simplebar>
+                                    <div class="bucket-wrapper" data-bucket-name="dest_host"></div>
+                                </div>
+                            </div>
+                            <table id="dest_host-bucket-table" class="ps-datatable">
+                                <thead>
+                                    <tr>
+                                        <th class="cursor-default table-header">Dest host</th>
+                                        <th class="cursor-default table-header">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="query-constructor-apply" class="query-item-button-container">
+            <button class="simple-button transition-2" onclick="DoQuery()">Apply</button>
+        </div>
+    </div>
+</div>
