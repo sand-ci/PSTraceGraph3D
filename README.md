@@ -18,3 +18,11 @@ ES_USER:admin
 ES_PASSWORD:123456
 ES_INDEX:my-es-index
 ```
+## Requirements
+```
+Django==2.2.5
+elasticsearch==7.0.4
+pytz==2019.2
+sqlparse==0.3.0
+urllib3==1.25.3
+```
