@@ -1,7 +1,7 @@
 # PSTraceGraph3D
 
 ## Short description
-The tool is built on Django 2.0.2 and ElasticSearch as data source.
+The tool is built on Django and ElasticSearch as data source.
 The tool helps to visualise paths between Source and Destination.
 
 Demo video is available here: [PSTraceGraph3D Video](https://yadi.sk/i/Qf3lqBjKVz-YGA)
