@@ -1,0 +1,40 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: perfsonar-web
+  namespace: perfsonar-platform
+  labels:
+    k8s-app: perfsonar-web
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 80
+  selector:
+    k8s-app: perfsonar-web
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: perfsonar-web
+  namespace: perfsonar-platform
+  labels:
+    k8s-app: perfsonar-web
+  annotations:
+    kubernetes.io/ingress.class: nginx    
+    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    - perfsonar.uc.ssl-hep.org
+    secretName: sxfe-cert
+  rules:
+    - host: perfsonar.uc.ssl-hep.org
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: perfsonar-web
+            servicePort: 80
