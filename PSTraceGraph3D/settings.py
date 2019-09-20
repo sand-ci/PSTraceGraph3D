@@ -18,6 +18,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Reading config
 paths = [path for path in os.listdir(os.path.join(BASE_DIR, "PSTraceGraph3D")) if "config" in path]
+if not paths:
+    raise FileNotFoundError("There is no any config file, please check the documentation!")
 config_path = os.path.join(BASE_DIR, "PSTraceGraph3D", paths[0])
 with open(config_path, "r", encoding="utf-8") as file:
     content = ["".join(line.split()) for line in file.readlines() if line]
