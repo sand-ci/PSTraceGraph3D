@@ -19,8 +19,10 @@ spec:
       - name: perfsonar-platform
         image: sandci/ps-platform:latest
         imagePullPolicy: Always
-        command: ["python"]
-        args: ["manage.py runserver 0.0.0.0:80"]
+        # command: ["python"]
+        # args: ["/ps_platform/manage.py runserver 0.0.0.0:80"]
+        command: ["sleep"]
+        args: ["9999999999"]
         ports:
           - containerPort: 80
         # livenessProbe:
