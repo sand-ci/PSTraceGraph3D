@@ -17,10 +17,10 @@ spec:
     spec:
       containers:
       - name: perfsonar-platform
-        image: sslhep/perfsonar-platform-server:latest
+        image: sandci/ps-platform:latest
         imagePullPolicy: Always
         command: ["python"]
-        args: ["manage.py runserver 0.0.0.0:8000"]
+        args: ["manage.py runserver 0.0.0.0:80"]
         ports:
           - containerPort: 80
         # livenessProbe:

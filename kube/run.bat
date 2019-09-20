@@ -1,5 +1,5 @@
 REM __create secret with configuration__  
-kubectl create secret -n perfsonar-platform generic config-frontend --from-file=conf=secrets/config.ini
+kubectl create secret -n perfsonar-platform generic config-web --from-file=conf=secrets/config.ini
 
 REM __deploy service and ingress__  
 kubectl create -f service.yaml
