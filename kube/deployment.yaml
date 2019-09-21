@@ -21,8 +21,9 @@ spec:
         imagePullPolicy: Always
         # command: ["python"]
         # args: ["/ps_platform/manage.py runserver 0.0.0.0:80"]
-        command: ["sleep"]
-        args: ["9999999999"]
+        # command: ["sleep"]
+        # args: ["9999999999"]
+        command: ["/ps_platform/run.sh"]
         ports:
           - containerPort: 80
         # livenessProbe:
@@ -42,4 +43,4 @@ spec:
           secretName: config-web
           items:
           - key: conf
-            path: config.json      
+            path: config.ini      
