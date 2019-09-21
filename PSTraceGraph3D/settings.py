@@ -21,7 +21,7 @@ with open(config_path, "r", encoding="utf-8") as file:
     content = ["".join(line.split()) for line in file.readlines() if line]
     config = {key: value for key, value in [(line.split(":")[0], ":".join(line.split(":")[1:])) for line in content]}
 
-
+print("config:", config)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
@@ -32,6 +32,7 @@ SECRET_KEY = config.get("SECRET_KEY")
 DEBUG = True
 
 ALLOWED_HOSTS = config.get("ALLOWED_HOSTS")
+print("Allowed hosts:", ALLOWED_HOSTS)
 
 # ElasticSearch
 ES_HOSTS = config.get("ES_HOSTS").split(",")
