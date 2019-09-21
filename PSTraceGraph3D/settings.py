@@ -15,12 +15,8 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Reading config
-paths = [path for path in os.listdir(os.path.join(BASE_DIR, "PSTraceGraph3D")) if "config" in path]
-if not paths:
-    raise FileNotFoundError("There is no any config file, please check the documentation!")
-config_path = os.path.join(BASE_DIR, "PSTraceGraph3D", paths[0])
+config_path = "/usr/src/app/config/config.ini"
 with open(config_path, "r", encoding="utf-8") as file:
     content = ["".join(line.split()) for line in file.readlines() if line]
     config = {key: value for key, value in [(line.split(":")[0], ":".join(line.split(":")[1:])) for line in content]}
@@ -70,8 +66,7 @@ ROOT_URLCONF = 'PSTraceGraph3D.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
-        ,
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
