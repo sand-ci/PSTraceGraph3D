@@ -113,22 +113,22 @@ class GraphBuilder(View):
 
         query["aggs"] = {
             "src": {
-                "terms": {"field": "src.keyword", "size": 1000}
+                "terms": {"field": "src", "size": 1000}
             },
             "src_site": {
-                "terms": {"field": "src_site.keyword", "size": 1000}
+                "terms": {"field": "src_site", "size": 1000}
             },
             "src_host": {
-                "terms": {"field": "src_host.keyword", "size": 1000}
+                "terms": {"field": "src_host", "size": 1000}
             },
             "dest": {
-                "terms": {"field": "dest.keyword", "size": 1000}
+                "terms": {"field": "dest", "size": 1000}
             },
             "dest_site": {
-                "terms": {"field": "dest_site.keyword", "size": 1000}
+                "terms": {"field": "dest_site", "size": 1000}
             },
             "dest_host": {
-                "terms": {"field": "dest_host.keyword", "size": 1000}
+                "terms": {"field": "dest_host", "size": 1000}
             }
         }
 
