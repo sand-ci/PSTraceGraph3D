@@ -54,6 +54,9 @@ class GraphBuilder(View):
             if graph.number_of_hits > jumps[-1] and not graph.the_end:
                 jumps.append(graph.number_of_hits)
 
+            data["from_datetime"] = graph.min_datetime
+            data["to_datetime"] = graph.max_datetime
+
             data["graph_data"] = graph_data
             data["table_data"] = table_data
             data["jumps"] = jumps

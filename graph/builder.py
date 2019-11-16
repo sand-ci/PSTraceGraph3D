@@ -1,7 +1,7 @@
 from collections import defaultdict
 from math import pi
 
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, RequestError
 from datetime import datetime
 
 from PSTraceGraph3D.settings import ES_HOSTS, ES_USER, ES_PASSWORD, ES_INDEX
@@ -23,6 +23,7 @@ class Graph:
     src_colour = "#b4448b"
     dest_colour = "#448cb4"
     ghost_colour = "#b00000"
+    incomplete_colour = "#b00000"
 
     def __init__(self, query):
         self.query = query
@@ -32,7 +33,10 @@ class Graph:
         else:
             self.es_connection = Elasticsearch(hosts=ES_HOSTS)
 
-        self.response = self.es_connection.search(index=ES_INDEX, body=self.query)
+        try:
+            self.response = self.es_connection.search(index=ES_INDEX, body=self.query)
+        except RequestError as e:
+            self.response = self.request_error_handling(e)
 
         self.number_of_hits = 0
         self.integrity_buffer = []
@@ -40,10 +44,24 @@ class Graph:
         self.links = []
         self.nodes_links_counter = defaultdict(int)
         self.path_counter = defaultdict(int)
-        self.nodes_integral_links_counter = defaultdict(int)
+        self.nodes_folded_links_counter = defaultdict(int)
         self.the_end = None
 
+        self.max_datetime = None
+        self.min_datetime = None
+
         self.table_data = []
+
+    def request_error_handling(self, error):
+        if error.error == "search_phase_execution_exception":
+            for agg_key in self.query["aggs"]:
+                self.query["aggs"][agg_key]["terms"]["field"] = f"{agg_key}.keyword"
+
+            response = self.es_connection.search(index=ES_INDEX, body=self.query)
+        else:
+            raise error
+
+        return response
 
     def build(self, max_nodes):
         delta = self.query["from"]
@@ -52,8 +70,8 @@ class Graph:
 
         if self.response["hits"]["hits"]:
             for self.number_of_hits, hit in enumerate(self.response["hits"]["hits"]):
-                next_nodes, next_links = self.process_path_data(hit)
-
+                self.sort_datetime(hit)
+                next_nodes, next_links, incomplete = self.process_path_data(hit)
                 if len(self.nodes) + len(next_nodes) > max_nodes:
                     self.the_end = False
                     break
@@ -61,9 +79,26 @@ class Graph:
                     self.nodes += next_nodes
                     self.links += next_links
 
-        self.build_integral_links()
+                    self.insert_path_to_table_data(hit["_source"], incomplete=incomplete)
+
+        self.build_folded_links()
 
         self.number_of_hits += delta
+
+    def sort_datetime(self, hit):
+        timestamp = hit["_source"]["timestamp"]
+        date_time = from_unix_timestamp(timestamp)
+        if self.max_datetime is None:
+            self.max_datetime = date_time
+        else:
+            if self.max_datetime < date_time:
+                self.max_datetime = date_time
+
+        if self.min_datetime is None:
+            self.min_datetime = date_time
+        else:
+            if self.min_datetime > date_time:
+                self.min_datetime = date_time
 
     def process_path_data(self, hit):
         nodes = []
@@ -72,10 +107,10 @@ class Graph:
         path = hit["_source"]
 
         self.path_counter[path.get("hash")] += 1
-        self.insert_path_to_table_data(path)
         path_fragment = 1
 
-        src_host = self.assemble_node(path.get("src_host"), nodes, path.get("hash"), colour=self.src_colour)
+        src_host = self.assemble_node(path.get("src_host"), nodes, path.get("hash"),
+                                      colour=self.src_colour, shape="large_sphere")
         src = self.assemble_node(path.get("src"), nodes, path.get("hash"), colour=self.src_colour)
         links.append(self.assemble_link(src_host, src, path_fragment, path.get("hash"), colour=self.src_colour))
 
@@ -99,13 +134,31 @@ class Graph:
             previous_node = current_node
 
         path_fragment += 1
-        dest_host = self.assemble_node(path.get("dest_host"), nodes, path.get("hash"), colour=self.dest_colour)
-        links.append(self.assemble_link(previous_node, dest_host, path_fragment, path.get("hash"),
-                                        colour=self.dest_colour))
+        dest_host = self.assemble_node(path.get("dest_host"), nodes, path.get("hash"),
+                                       colour=self.dest_colour, shape="large_sphere")
 
-        return nodes, links
+        if path.get("dest") != previous_node["id"]:
 
-    def assemble_node(self, node, nodes, path_hash, rtt=None, colour=None):
+            dest = self.assemble_node(path.get("dest"), nodes, path.get("hash"),
+                                      colour=self.dest_colour, shape="sphere")
+            links.append(self.assemble_link(previous_node, dest, path_fragment, path.get("hash"),
+                                            colour=self.dest_colour))
+
+            path_fragment += 1
+            links.append(self.assemble_link(dest, dest_host, path_fragment, path.get("hash"),
+                                            colour=self.dest_colour))
+
+            self.mark_path_as_incomplete(nodes, links)
+
+            incomplete = True
+        else:
+            links.append(self.assemble_link(previous_node, dest_host, path_fragment, path.get("hash"),
+                                            colour=self.dest_colour))
+            incomplete = False
+
+        return nodes, links, incomplete
+
+    def assemble_node(self, node, nodes, path_hash, rtt=None, colour=None, shape="sphere"):
         if not colour:
             colour = self.default_colour
 
@@ -114,7 +167,8 @@ class Graph:
             "label": node,
             "colour": colour,
             "path_hash": path_hash,
-            "rtt": rtt
+            "rtt": rtt,
+            "shape": shape
         }
 
         if node["id"] not in self.integrity_buffer:
@@ -139,16 +193,19 @@ class Graph:
             distance_mask = distance
 
             if distance < 0:
-                distance = 0
+                distance = 20
                 distance_mask = "No data"
         except TypeError:
-            distance = 0
+            distance = 20
             distance_mask = "No data"
 
         if distance <= 0:
             speed = round(0.1 * (1 / (1 ** (1 / 2))), 2)
         else:
             speed = round(0.1 * (1 / (distance ** (1 / 2))), 2)
+
+        if speed <= 0:
+            speed = 1
 
         link = {
             "path_id": f"{path_hash}/{self.path_counter[path_hash]}",
@@ -162,10 +219,20 @@ class Graph:
             "speed": speed,
             "colour": colour,
             "path_hash": f"{path_hash}",
-            "integral": False
+            "folded": False,
+            "incomplete": False
         }
 
         return link
+
+    def mark_path_as_incomplete(self, nodes, links):
+
+        for node in nodes:
+            node["colour"] = self.incomplete_colour
+
+        for link in links:
+            link["colour"] = self.incomplete_colour
+            link["incomplete"] = True
 
     def get_graph_data(self):
         graph_data = {
@@ -175,7 +242,7 @@ class Graph:
 
         return graph_data
 
-    def build_integral_links(self):
+    def build_folded_links(self):
         integrity_buffer = []
         nodes_links_counter = defaultdict(int)
         links_distances = defaultdict(list)
@@ -185,10 +252,10 @@ class Graph:
             target_id = link["target"]
             path_hash = link["path_hash"]
 
-            if link["distance"] > 0:
+            if link["distance"] > 0 and link["distance_mask"] != "No data":
                 links_distances[f"{source_id}-{target_id}-{path_hash}"].append(link["distance"])
 
-        integral_links = []
+        folded_links = []
         for link in self.links:
             source_id = link["source"]
             target_id = link["target"]
@@ -207,7 +274,7 @@ class Graph:
                 distances = links_distances[f"{source_id}-{target_id}-{path_hash}"]
                 if distances:
                     average_distance = round(sum(distances)/len(distances), 3)
-                    distance_mask = f"Average: {average_distance}"
+                    distance_mask = average_distance
                 else:
                     distance_mask = f"No data"
                     average_distance = 0
@@ -227,14 +294,15 @@ class Graph:
                     "distance_mask": distance_mask,
                     "avg_distance": f"{average_distance}",
                     "speed": speed,
-                    "colour": "#000000",
+                    "colour": link["colour"],
                     "path_hash": f"{path_hash}",
-                    "integral": True
+                    "folded": True,
+                    "incomplete": link["incomplete"]
                 }
 
-                integral_links.append(link)
+                folded_links.append(link)
 
-        self.links += integral_links
+        self.links += folded_links
 
     def get_aggregations(self):
         aggregations = self.response["aggregations"]
@@ -245,7 +313,7 @@ class Graph:
 
         return data
 
-    def insert_path_to_table_data(self, path):
+    def insert_path_to_table_data(self, path, incomplete=False):
 
         path_hash = path.get("hash")
 
@@ -258,7 +326,8 @@ class Graph:
             path.get("dest", "-"),
             path.get("dest_site", "-"),
             path.get("dest_host", "-"),
-            f"{path_hash}/{self.path_counter[path_hash]}",
+            incomplete,
+            f"{path_hash}/{self.path_counter[path_hash]}"
         ]
 
         self.table_data.append(table_item)

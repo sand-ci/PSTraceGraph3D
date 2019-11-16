@@ -15,15 +15,31 @@
     <script type="text/javascript" src="{% static 'graph/side-packages/simplebar-4.2.0/simplebar.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'graph/side-packages/chartjs-2.8.0/Chart.min.css' %}">
     <script type="text/javascript" src="{% static 'graph/side-packages/chartjs-2.8.0/Chart.min.js' %}"></script>
+    <script src="{% static 'graph/side-packages/three/three.min.js' %}"></script>
     {% block more_css %}
     {% endblock %}
 </head>
 <body>
-<main>
+<div id="preloader">
+    <div class="grid-loader">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</div>
+<div id="info-container">
+    <span>perfSONAR visualization platform</span>
+</div>
+<main style="opacity: 0">
     {% block content %}
     {% endblock %}
 </main>
-<script type="text/javascript" src="{% static 'graph/js/master.js' %}"></script>
 </body>
 <script src="{% static 'graph/side-packages/bootstrap-datetimepicker/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'graph/side-packages/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js' %}"></script>
@@ -31,4 +47,5 @@
 <link rel="stylesheet" type="text/css" href="{% static 'graph/side-packages/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css' %}"/>
 <link rel="stylesheet" href="{% static 'graph/css/master.css' %}">
 <link rel="stylesheet" href="{% static 'graph/css/progress_bar.css' %}">
+<script type="text/javascript" src="{% static 'graph/js/master.js' %}"></script>
 </html>

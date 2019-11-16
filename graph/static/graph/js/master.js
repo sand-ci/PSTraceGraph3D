@@ -46,72 +46,66 @@ function ToggleMenus() {
     }
 }
 
-
-// TODO Recode into single function
-function TogglePSMenuLeft(psMenuBtn) {
+function TogglePSMenu(psMenuBtn, btnPosition) {
     let psMenu = psMenuBtn.closest('.ps-menu');
+
+    let moveTrack = null;
+    let defaultPosition = null;
+    let selector = null;
+
+    if (btnPosition === "bottom") {
+        moveTrack = {"bottom": -psMenu.height() - 10};
+        defaultPosition = {"bottom": 0};
+        selector = ".ps-menu-btn.bottom i";
+    }
+
+    if (btnPosition === "left") {
+        moveTrack = {"left": -psMenu.width() - 10};
+        defaultPosition = {"left": 10};
+        selector = ".ps-menu-btn.left i";
+    }
+
+    if (btnPosition === "right") {
+        moveTrack = {"right": -psMenu.width() - 10};
+        defaultPosition = {"right": 10};
+        selector = ".ps-menu-btn.right i";
+    }
 
     if (psMenu.data("opened")) {
         psMenu.data("opened", false);
-        psMenu.animate({"left": -psMenu.width() - 10}, 400, function () {
-           psMenu.find(".ps-menu-btn.left i").css({transform: 'rotate(' + 180 + 'deg)'});
+        psMenu.animate(moveTrack, 400, function () {
+           psMenu.find(selector).css({transform: 'rotate(' + 180 + 'deg)'});
         });
     } else {
         psMenu.data("opened", true);
-        psMenu.animate({"left": 10}, 400, function () {
-           psMenu.find(".ps-menu-btn.left i").css({transform: 'rotate(' + 0 + 'deg)'});
+        psMenu.animate(defaultPosition, 400, function () {
+           psMenu.find(selector).css({transform: 'rotate(' + 0 + 'deg)'});
         });
     }
 
     UpdateToolbarsToClose()
 }
 
-function TogglePSMenuBottom(psMenuBtn) {
-    let psMenu = psMenuBtn.closest('.ps-menu');
-
-    if (psMenu.data("opened")) {
-        psMenu.data("opened", false);
-        psMenu.animate({"bottom": -psMenu.height() - 10}, 400, function () {
-           psMenu.find(".ps-menu-btn.bottom i").css({transform: 'rotate(' + 180 + 'deg)'});
-        });
-    } else {
-        psMenu.data("opened", true);
-        psMenu.animate({"bottom": 0}, 400, function () {
-           psMenu.find(".ps-menu-btn.bottom i").css({transform: 'rotate(' + 0 + 'deg)'});
-        });
-    }
-
-    UpdateToolbarsToClose()
-}
-
-function TogglePSMenuRight(psMenuBtn) {
-    let psMenu = psMenuBtn.closest('.ps-menu');
-
-    if (psMenu.data("opened")) {
-        psMenu.data("opened", false);
-        psMenu.animate({"right": -psMenu.width() - 10}, 400, function () {
-           psMenu.find(".ps-menu-btn.right i").css({transform: 'rotate(' + 180 + 'deg)'});
-        });
-    } else {
-        psMenu.data("opened", true);
-        psMenu.animate({"right": 10}, 400, function () {
-           psMenu.find(".ps-menu-btn.right i").css({transform: 'rotate(' + 0 + 'deg)'});
-        });
-    }
-
-    UpdateToolbarsToClose()
-}
 
 $(document).ready( function () {
     $(".ps-menu-btn.left").on('click', function () {
-        TogglePSMenuLeft($(this))
+        TogglePSMenu($(this), "left")
     });
 
     $(".ps-menu-btn.bottom").on('click', function () {
-        TogglePSMenuBottom($(this))
+        TogglePSMenu($(this), "bottom")
     });
 
     $(".ps-menu-btn.right").on('click', function () {
-        TogglePSMenuRight($(this))
+        TogglePSMenu($(this), "right")
     });
+
+    $(".image-title").hover(function () {
+        let target = $($(this).data("target"));
+        target.addClass("pulse")
+    }, function () {
+        let target = $($(this).data("target"));
+        target.removeClass("pulse")
+    })
+
 } );

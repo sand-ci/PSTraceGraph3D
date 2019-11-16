@@ -1,0 +1,119 @@
+{% load static %}
+<div class="modal fade" id="guidelinesModal" tabindex="-1" role="dialog" aria-labelledby="guidelinesModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="guidelinesModalLabel">Guidelines</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="guidelines-container">
+                    <section>
+                        <h4>Building query</h4>
+                        <p>There are seven filters available to build query. Setting one of them effects the others.</p>
+                        <p>The first one is <span class="guidelines-highlight blue image-title" data-target="#datetime-range-image">Datetime range</span> filter. Using icons <span class="glyphicon glyphicon-calendar"></span> you can set up values for datetime range: <span class="guidelines-highlight red">from</span> and <span class="guidelines-highlight red">to</span>.</p>
+                        <div id="datetime-range-image" class="image-container">
+                            <img src="{% static 'graph/img/guidelines/datetime_range.PNG' %}" alt="Datetime range">
+                        </div>
+                        <p>The others filters are dealing with server names and IPs values.
+                            These filters are
+                            <span class="guidelines-highlight blue image-title" data-target="#server-names-image">Source</span>,
+                            <span class="guidelines-highlight blue image-title" data-target="#server-names-image">Source site</span>,
+                            <span class="guidelines-highlight blue image-title" data-target="#server-names-image">Source host</span>,
+                            <span class="guidelines-highlight blue image-title" data-target="#server-names-image">Destination</span>,
+                            <span class="guidelines-highlight blue image-title" data-target="#server-names-image">Destination site</span>,
+                            <span class="guidelines-highlight blue image-title" data-target="#server-names-image">Destination host</span>.
+                        </p>
+                        <p>Each of them has relevant box where selected values are stored and dynamic table where items can be selected. Every dynamic table has fuzzy search bar at the top of it. To delete items from box just click on them.</p>
+                        <div id="server-names-image" class="image-container">
+                            <div class="main-image">
+                                <img src="{% static 'graph/img/guidelines/source-site.png' %}" alt="Source site">
+                            </div>
+                            <div class="decoration-images">
+                                <img src="{% static 'graph/img/guidelines/source.png' %}" alt="Source">
+                                <img src="{% static 'graph/img/guidelines/destination.png' %}" alt="Destination">
+                                <img src="{% static 'graph/img/guidelines/destination-site.png' %}" alt="Destination site">
+                                <img src="{% static 'graph/img/guidelines/destination host.png' %}" alt="Destination host">
+                                <img src="{% static 'graph/img/guidelines/source-host.png' %}" alt="Source host">
+                                <img src="{% static 'graph/img/guidelines/source-site.png' %}" alt="Source site">
+                            </div>
+                        </div>
+                        <p style="color: #ca0000;">To make all filters be updated click <span class="guidelines-highlight grey">Apply</span> button after any changes performed.</p>
+                    </section>
+                    <section>
+                        <h4>Toolbar</h4>
+                        <p><span class="guidelines-highlight blue image-title" data-target="#toolbar-image">Toolbar</span> is located at the top of the application window.</p>
+                        <div id="toolbar-image" class="image-container" style="justify-content: center;">
+                            <img src="{% static 'graph/img/guidelines/toolbar.PNG' %}" alt="Toolbar">
+                        </div>
+                        <p>It has pagination buttons backward <i class="fa fa-chevron-left guidelines-icon"></i> and forward <i class="fa fa-chevron-right guidelines-icon"></i>,
+                            button to refresh graph <i class="fa fa-refresh guidelines-icon"></i>, button to show/hide panels <i class="fa fa-expand guidelines-icon"></i>
+                            and button to get guidelines <i class="fa fa-question guidelines-icon"></i>.</p>
+                    </section>
+                    <section>
+                        <h4>Paths visualization</h4>
+                        <p>Source hosts, sources, hops, missing hops, destinations and destination hosts are represented as spheres of different colors.
+                            Source hosts' and Destination hosts' spheres are larger then the others as they declare begging and end of any
+                            <span class="guidelines-highlight blue image-title" data-target="#path-visualization-table">Path</span>.</p>
+                        <div id="path-visualization-table" class="image-container">
+                            <table>
+                                <tbody>
+                                    <tr>
+                                        <td><div class="wrapper"><div class="circle large src"></div></div></td>
+                                        <td><div class="wrapper"><div class="circle small src"></div></div></td>
+                                        <td><div class="wrapper"><div class="circle small node"></div></div></td>
+                                        <td><div class="wrapper"><div class="circle small node"></div></div></td>
+                                        <td><div class="wrapper"><div class="circle small missing-node"></div></div></td>
+                                        <td><div class="wrapper"><div class="circle small dest"></div></div></td>
+                                        <td><div class="wrapper"><div class="circle large dest"></div></div></td>
+                                    </tr>
+                                    <tr>
+                                        <td><div class="wrapper"><div class="node-label"><span>Src host</span></div></div></td>
+                                        <td><div class="wrapper"><div class="node-label"><span>Src</span></div></div></td>
+                                        <td colspan="2"><div class="wrapper"><div class="node-label"><span>Hops</span></div></div></td>
+                                        <td><div class="wrapper"><div class="node-label"><span>Missing hop</span></div></div></td>
+                                        <td><div class="wrapper"><div class="node-label"><span>Dest</span></div></div></td>
+                                        <td><div class="wrapper"><div class="node-label"><span>Dest host</span></div></div></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                    <section>
+                        <h4>Paths datatable</h4>
+                        <p>Paths datatable is located at the bottom of application window and comprises further headers:
+                            <span class="guidelines-highlight red">Source</span>,
+                            <span class="guidelines-highlight red">Source site</span>,
+                            <span class="guidelines-highlight red">Source host</span>,
+                            <span class="guidelines-highlight red">IPv6</span>,
+                            <span class="guidelines-highlight red">Timestamp</span>,
+                            <span class="guidelines-highlight red">Destination</span>,
+                            <span class="guidelines-highlight red">Destination site</span>,
+                            <span class="guidelines-highlight red">Destination host</span>,
+                            <span class="guidelines-highlight red">Incomplete</span>,
+                            <span class="guidelines-highlight red">Path ID</span>.
+                        </p>
+                        <p>
+                            Paths datatable has relevant fuzzy search input and shows items with pagination by ten.
+                            Clicking on item will highlight path on graph and fill relevant info in the <span class="guidelines-highlight red">Path info</span> window on the right.
+                            If <span class="guidelines-highlight red">Path fold up</span> in the <span class="guidelines-highlight blue image-title" data-target="#path-datatable-image">Path datatable toolbar</span> is active all paths of the same hash value will be highlighted,
+                            <span class="guidelines-highlight red">Path info</span> window on the right will show mean data.
+                        </p>
+                        <p>Also there is slider for <span class="guidelines-highlight red">Distance power</span> adjustment in the <span class="guidelines-highlight blue image-title" data-target="#path-datatable-image">Path datatable toolbar</span>
+                            Please keep in mind that it doesn't expand space between nodes but increase power of links between them.
+                        </p>
+                        <div id="path-datatable-image" class="image-container" style="justify-content: center;">
+                            <img src="{% static 'graph/img/guidelines/path datatable toolbar.PNG' %}" alt="Path datatable toolbar">
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
