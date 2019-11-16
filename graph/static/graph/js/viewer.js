@@ -18,17 +18,17 @@ const Graph = ForceGraph3D()(document.getElementById('graph-container'))
     .linkCurvature('curvature')
     .linkCurveRotation('rotation')
     .nodeLabel('label')
-    .nodeColor("colour")
-    .linkColor("colour")
+    .nodeColor("color")
+    .linkColor("color")
     .linkDirectionalArrowLength(5)
     .linkDirectionalArrowRelPos(1)
     .linkVisibility(link => link['folded'] !== false)
     .linkLabel("avg_distance")
     .showNavInfo(false)
-    .nodeThreeObject(({ shape, colour }) => new THREE.Mesh(
+    .nodeThreeObject(({ shape, color }) => new THREE.Mesh(
         shapes[shape],
         new THREE.MeshBasicMaterial({
-            color: colour,
+            color: color,
             depthWrite: true,
             transparent: true,
             opacity: materialsOpacity[shape]
@@ -232,7 +232,7 @@ function FoldUpPaths() {
 }
 
 function UpdateGraphData() {
-    Graph.nodeColor("colour").linkColor("colour").graphData(graphData);
+    Graph.nodeColor("color").linkColor("color").graphData(graphData);
     if (pathsAreFolded) {
         Graph
             .linkVisibility(link => link['folded'] !== false)
@@ -345,7 +345,7 @@ function HighlightPath(row) {
         pathClicked = null;
         pathHighlighted = [];
         Graph
-            .linkColor("colour")
+            .linkColor("color")
             .linkDirectionalParticleWidth(0)
             .linkDirectionalParticles(0)
             .linkDirectionalParticleSpeed(0)
@@ -395,7 +395,7 @@ let pathChart = new Chart(ctx, {
                     let fragment = tooltipItem.index + 1;
 
                     Graph
-                        .linkColor(link => (link['path_id'] === pathID) ? (link["path_fragment"] === fragment) ? "#00bfb3": link["colour"]: link["colour"]);
+                        .linkColor(link => (link['path_id'] === pathID) ? (link["path_fragment"] === fragment) ? "#00bfb3": link["color"]: link["color"]);
 
                     let table = $("#path-distance-table");
                     let rows = table.find("tr");
@@ -558,7 +558,7 @@ function FillPathInfo(pathID) {
 
      $("#path-chart").mouseout(function () {
          table.find("tr").removeClass("selected");
-         Graph.linkColor(link => link["colour"]);
+         Graph.linkColor(link => link["color"]);
      });
 }
 

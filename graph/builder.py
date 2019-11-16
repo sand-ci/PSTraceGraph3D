@@ -1,4 +1,5 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from math import pi
 
 from elasticsearch import Elasticsearch, RequestError
@@ -18,12 +19,98 @@ def from_unix_timestamp(timestamp):
     return dt
 
 
-class Graph:
-    default_colour = "#8d8d8d"
-    src_colour = "#b4448b"
-    dest_colour = "#448cb4"
-    ghost_colour = "#b00000"
-    incomplete_colour = "#b00000"
+class ColorSchemeMixin:
+    hop_color = "#8d8d8d"
+    src_color = "#b4448b"
+    dest_color = "#448cb4"
+    missing_color = "#b00000"
+    incomplete_color = "#b00000"
+
+
+@dataclass
+class Node(ColorSchemeMixin):
+    id: str
+    path_hash: str
+    label: str = None
+    color: str = None
+    rtt: int = None
+    shape: str = "sphere"
+
+    def __str__(self):
+        return f"Id: {self.id} | Path: {self.path_hash}"
+
+    def __post_init__(self):
+        if self.color is None:
+            self.color = self.hop_color
+        else:
+            self.color = self.__getattribute__(self.color)
+
+        if self.label is None:
+            self.label = self.id
+
+    def register(self, nodes, integrity_buffer):
+        if self.id not in integrity_buffer:
+            integrity_buffer.append(self.id)
+            nodes.append(self.__dict__)
+
+
+@dataclass
+class Link(ColorSchemeMixin):
+    source: Node
+    target: Node
+    path_fragment: int
+    path_hash: str
+    path_id: str = None
+    curvature: float = None
+    rotation: float = None
+    distance: float = 20.0
+    distance_mask: str = "No data"
+    speed: float = 1.0
+    color: str = None
+    folded: bool = False
+    incomplete: bool = False
+
+    def __str__(self):
+        return f"Id: {self.path_id} | Path: {self.path_hash}"
+
+    def __post_init__(self):
+        if self.color is None:
+            self.color = self.hop_color
+        else:
+            self.color = self.__getattribute__(self.color)
+
+        try:
+            distance = round(self.target.rtt - self.source.rtt, 3)
+            if distance > 0:
+                self.distance = distance
+                self.distance_mask = distance
+        except TypeError:
+            pass
+
+        if self.distance <= 0:
+            self.speed = round(0.1 * (1 / (1 ** (1 / 2))), 2)
+        else:
+            self.speed = round(0.1 * (1 / (self.distance ** (1 / 2))), 2)
+
+        if self.speed <= 0:
+            self.speed = 0.3
+
+    def register(self, links, links_counter, paths_counter):
+        self.path_id = f"{self.path_hash}/{paths_counter[self.path_hash]}"
+
+        links_counter[self.source.id] += 1
+        counter = links_counter[self.source.id]
+
+        self.curvature = 0.1 * counter
+        self.rotation = round(pi * counter / 6, 3)
+
+        self.source = self.source.id
+        self.target = self.target.id
+
+        links.append(self.__dict__)
+
+
+class Graph(ColorSchemeMixin):
 
     def __init__(self, query):
         self.query = query
@@ -39,11 +126,11 @@ class Graph:
             self.response = self.request_error_handling(e)
 
         self.number_of_hits = 0
-        self.integrity_buffer = []
+        self.nodes_integrity_buffer = []
         self.nodes = []
         self.links = []
-        self.nodes_links_counter = defaultdict(int)
-        self.path_counter = defaultdict(int)
+        self.links_counter = defaultdict(int)
+        self.paths_counter = defaultdict(int)
         self.nodes_folded_links_counter = defaultdict(int)
         self.the_end = None
 
@@ -106,132 +193,72 @@ class Graph:
 
         path = hit["_source"]
 
-        self.path_counter[path.get("hash")] += 1
+        self.paths_counter[path.get("hash")] += 1
         path_fragment = 1
 
-        src_host = self.assemble_node(path.get("src_host"), nodes, path.get("hash"),
-                                      colour=self.src_colour, shape="large_sphere")
-        src = self.assemble_node(path.get("src"), nodes, path.get("hash"), colour=self.src_colour)
-        links.append(self.assemble_link(src_host, src, path_fragment, path.get("hash"), colour=self.src_colour))
+        src_host = Node(path.get("src_host"), path.get("hash"), color="src_color", shape="large_sphere")
+        src_host.register(nodes, self.nodes_integrity_buffer)
+
+        src = Node(path.get("src"), path.get("hash"), color="src_color")
+        src.register(nodes, self.nodes_integrity_buffer)
+
+        src_host__src__link = Link(src_host, src, path_fragment, path.get("hash"), color="src_color")
+        src_host__src__link.register(links, self.links_counter, self.paths_counter)
 
         previous_node = src
         hops = sorted(zip(path.get("ttls"), path.get("hops"), path.get("rtts")))
-        hops = self.fix_ghost_hops(hops, path.get("hash"))
+        hops = self.fix_missing_hops(hops, path.get("hash"))
 
         for i, hop in enumerate(hops, 1):
             path_fragment += 1
 
-            colour = self.default_colour
+            color = "hop_color"
             if "Missed node" in hop[1]:
-                colour = self.ghost_colour
+                color = "missing_color"
             elif i == len(hops):
-                colour = self.dest_colour
+                color = "dest_color"
 
-            current_node = self.assemble_node(hop[1], nodes, path.get("hash"), rtt=hop[2], colour=colour)
-            links.append(self.assemble_link(previous_node, current_node, path_fragment, path.get("hash"),
-                                            colour=colour))
+            current_node = Node(hop[1], path.get("hash"), rtt=hop[2], color=color)
+            current_node.register(nodes, self.nodes_integrity_buffer)
+
+            link = Link(previous_node, current_node, path_fragment, path.get("hash"), color=color)
+            link.register(links, self.links_counter, self.paths_counter)
 
             previous_node = current_node
 
         path_fragment += 1
-        dest_host = self.assemble_node(path.get("dest_host"), nodes, path.get("hash"),
-                                       colour=self.dest_colour, shape="large_sphere")
+        dest_host = Node(path.get("dest_host"), path.get("hash"), color="dest_color", shape="large_sphere")
+        dest_host.register(nodes, self.nodes_integrity_buffer)
 
-        if path.get("dest") != previous_node["id"]:
+        if path.get("dest") != previous_node.id:
+            dest = Node(path.get("dest"), path.get("hash"), color="dest_color")
+            dest.register(nodes, self.nodes_integrity_buffer)
 
-            dest = self.assemble_node(path.get("dest"), nodes, path.get("hash"),
-                                      colour=self.dest_colour, shape="sphere")
-            links.append(self.assemble_link(previous_node, dest, path_fragment, path.get("hash"),
-                                            colour=self.dest_colour))
+            previous_node__dest__link = Link(previous_node, dest, path_fragment, path.get("hash"), color="dest_color")
+            previous_node__dest__link.register(links, self.links_counter, self.paths_counter)
 
             path_fragment += 1
-            links.append(self.assemble_link(dest, dest_host, path_fragment, path.get("hash"),
-                                            colour=self.dest_colour))
+            dest__dest_host__link = Link(dest, dest_host, path_fragment, path.get("hash"), color="dest_color")
+            dest__dest_host__link.register(links, self.links_counter, self.paths_counter)
 
             self.mark_path_as_incomplete(nodes, links)
 
             incomplete = True
         else:
-            links.append(self.assemble_link(previous_node, dest_host, path_fragment, path.get("hash"),
-                                            colour=self.dest_colour))
+            previous_node__dest_host__link = Link(previous_node, dest_host, path_fragment, path.get("hash"),
+                                                  color="dest_color")
+            previous_node__dest_host__link.register(links, self.links_counter, self.paths_counter)
+
             incomplete = False
 
         return nodes, links, incomplete
 
-    def assemble_node(self, node, nodes, path_hash, rtt=None, colour=None, shape="sphere"):
-        if not colour:
-            colour = self.default_colour
-
-        node = {
-            "id": node,
-            "label": node,
-            "colour": colour,
-            "path_hash": path_hash,
-            "rtt": rtt,
-            "shape": shape
-        }
-
-        if node["id"] not in self.integrity_buffer:
-            self.integrity_buffer.append(node["id"])
-            nodes.append(node)
-
-        return node
-
-    def assemble_link(self, source, target, path_fragment, path_hash, colour=None):
-
-        if not colour:
-            colour = self.default_colour
-
-        self.nodes_links_counter[source["id"]] += 1
-        counter = self.nodes_links_counter[source["id"]]
-
-        curvature = 0.1 * counter
-        rotation = round(pi * counter / 6, 3)
-
-        try:
-            distance = round(target["rtt"] - source["rtt"], 3)
-            distance_mask = distance
-
-            if distance < 0:
-                distance = 20
-                distance_mask = "No data"
-        except TypeError:
-            distance = 20
-            distance_mask = "No data"
-
-        if distance <= 0:
-            speed = round(0.1 * (1 / (1 ** (1 / 2))), 2)
-        else:
-            speed = round(0.1 * (1 / (distance ** (1 / 2))), 2)
-
-        if speed <= 0:
-            speed = 1
-
-        link = {
-            "path_id": f"{path_hash}/{self.path_counter[path_hash]}",
-            "path_fragment": path_fragment,
-            "source": source["id"],
-            "target": target["id"],
-            "curvature": curvature,
-            "rotation": rotation,
-            "distance_mask": distance_mask,
-            "distance": distance,
-            "speed": speed,
-            "colour": colour,
-            "path_hash": f"{path_hash}",
-            "folded": False,
-            "incomplete": False
-        }
-
-        return link
-
     def mark_path_as_incomplete(self, nodes, links):
-
         for node in nodes:
-            node["colour"] = self.incomplete_colour
+            node["color"] = self.incomplete_color
 
         for link in links:
-            link["colour"] = self.incomplete_colour
+            link["color"] = self.incomplete_color
             link["incomplete"] = True
 
     def get_graph_data(self):
@@ -280,9 +307,13 @@ class Graph:
                     average_distance = 0
 
                 if average_distance <= 0:
-                    speed = round(0.1 * (1 / (1 ** (1 / 2))), 2)
+                    speed = 0.3
+                    average_distance = "No data"
                 else:
                     speed = round(0.1 * (1 / (average_distance ** (1 / 2))), 2)
+
+                if speed < 0.3:
+                    speed = 0.3
 
                 link = {
                     "path_id": f"{path_hash}",
@@ -294,7 +325,7 @@ class Graph:
                     "distance_mask": distance_mask,
                     "avg_distance": f"{average_distance}",
                     "speed": speed,
-                    "colour": link["colour"],
+                    "color": link["color"],
                     "path_hash": f"{path_hash}",
                     "folded": True,
                     "incomplete": link["incomplete"]
@@ -327,13 +358,13 @@ class Graph:
             path.get("dest_site", "-"),
             path.get("dest_host", "-"),
             incomplete,
-            f"{path_hash}/{self.path_counter[path_hash]}"
+            f"{path_hash}/{self.paths_counter[path_hash]}"
         ]
 
         self.table_data.append(table_item)
 
     @staticmethod
-    def fix_ghost_hops(hops, path_hash):
+    def fix_missing_hops(hops, path_hash):
         new_hops = []
 
         hop_map = {h[0]: h[0:] for h in hops}
