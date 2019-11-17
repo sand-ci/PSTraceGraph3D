@@ -117,6 +117,65 @@ class Link(ColorSchemeMixin):
         links.append(self.as_dict())
 
 
+@dataclass
+class FoldedUpLink(ColorSchemeMixin):
+    path_id: str
+    source: str
+    target: str
+    path_fragment: int
+    curvature: float = None
+    rotation: float = None
+    distance_mask: str = None
+    avg_distance: str = None
+    speed: float = None
+    color: str = None
+    path_hash: str = None
+    folded: bool = True
+    incomplete: bool = False
+
+    def __str__(self):
+        return f"Id: {self.path_id} | Path: {self.path_hash}"
+
+    def __post_init__(self):
+        if self.color is None:
+            self.color = self.hop_color
+
+        if self.path_hash is None:
+            self.path_hash = self.path_id
+
+    def as_dict(self):
+        return self.__dict__
+
+    def register(self, folded_links, nodes_links_counter, links_distances):
+        link_id = "-".join([str(i) for i in [self.source, self.target, self.path_hash]])
+
+        nodes_links_counter[self.source] += 1
+        counter = nodes_links_counter[self.source]
+
+        self.curvature = 0.1 * counter
+        self.rotation = round(pi * counter / 6, 3)
+
+        distances = links_distances[link_id]
+        if distances:
+            average_distance = round(sum(distances) / len(distances), 3)
+            self.distance_mask = average_distance
+        else:
+            self.distance_mask = f"No data"
+            average_distance = 0
+
+        if average_distance <= 0:
+            self.speed = 0.3
+            self.avg_distance = "No data"
+        else:
+            self.speed = round(0.1 * (1 / (average_distance ** (1 / 2))), 2)
+            self.avg_distance = f"Avarage: {average_distance}"
+
+        if self.speed < 0.3:
+            self.speed = 0.3
+
+        folded_links.append(self.as_dict())
+
+
 class Graph(ColorSchemeMixin):
 
     def __init__(self, query):
@@ -282,63 +341,25 @@ class Graph(ColorSchemeMixin):
         links_distances = defaultdict(list)
 
         for link in self.links:
-            source_id = link["source"]
-            target_id = link["target"]
-            path_hash = link["path_hash"]
-
             if link["distance"] > 0 and link["distance_mask"] != "No data":
-                links_distances[f"{source_id}-{target_id}-{path_hash}"].append(link["distance"])
+                link_id = "-".join([str(i) for i in [link["source"], link["target"], link["path_hash"]]])
+                links_distances[link_id].append(link["distance"])
 
         folded_links = []
         for link in self.links:
-            source_id = link["source"]
-            target_id = link["target"]
-            path_hash = link["path_hash"]
-            path_fragment = link["path_fragment"]
+            link_id = "-".join([str(i) for i in [link["source"], link["target"], link["path_hash"]]])
 
-            if f"{source_id}-{target_id}-{path_hash}" not in integrity_buffer:
-                integrity_buffer.append(f"{source_id}-{target_id}-{path_hash}")
+            if link_id not in integrity_buffer:
+                integrity_buffer.append(link_id)
 
-                nodes_links_counter[source_id] += 1
-                counter = nodes_links_counter[source_id]
+                folded_link = FoldedUpLink(str(link["path_hash"]),
+                                           link["source"],
+                                           link["target"],
+                                           link["path_fragment"],
+                                           color=link["color"],
+                                           incomplete=link["incomplete"])
 
-                curvature = 0.1 * counter
-                rotation = round(pi * counter / 6, 3)
-
-                distances = links_distances[f"{source_id}-{target_id}-{path_hash}"]
-                if distances:
-                    average_distance = round(sum(distances)/len(distances), 3)
-                    distance_mask = average_distance
-                else:
-                    distance_mask = f"No data"
-                    average_distance = 0
-
-                if average_distance <= 0:
-                    speed = 0.3
-                    average_distance = "No data"
-                else:
-                    speed = round(0.1 * (1 / (average_distance ** (1 / 2))), 2)
-
-                if speed < 0.3:
-                    speed = 0.3
-
-                link = {
-                    "path_id": f"{path_hash}",
-                    "source": source_id,
-                    "target": target_id,
-                    "path_fragment": path_fragment,
-                    "curvature": curvature,
-                    "rotation": rotation,
-                    "distance_mask": distance_mask,
-                    "avg_distance": f"{average_distance}",
-                    "speed": speed,
-                    "color": link["color"],
-                    "path_hash": f"{path_hash}",
-                    "folded": True,
-                    "incomplete": link["incomplete"]
-                }
-
-                folded_links.append(link)
+                folded_link.register(folded_links, nodes_links_counter, links_distances)
 
         self.links += folded_links
 
