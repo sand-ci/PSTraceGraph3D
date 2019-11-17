@@ -37,7 +37,7 @@ class Node(ColorSchemeMixin):
     shape: str = "sphere"
 
     def __str__(self):
-        return f"Id: {self.id} | Path: {self.path_hash}"
+        return f"Node id: {self.id} | Path: {self.path_hash}"
 
     def __post_init__(self):
         if self.color is None:
@@ -74,7 +74,7 @@ class Link(ColorSchemeMixin):
     incomplete: bool = False
 
     def __str__(self):
-        return f"Id: {self.path_id} | Path: {self.path_hash}"
+        return f"Link id: {self.path_id} | Path: {self.path_hash}"
 
     def __post_init__(self):
         if self.color is None:
@@ -134,7 +134,7 @@ class FoldedUpLink(ColorSchemeMixin):
     incomplete: bool = False
 
     def __str__(self):
-        return f"Id: {self.path_id} | Path: {self.path_hash}"
+        return f"Folded up link id: {self.path_id} | Path: {self.path_hash}"
 
     def __post_init__(self):
         if self.color is None:
@@ -225,6 +225,7 @@ class Graph(ColorSchemeMixin):
             for self.number_of_hits, hit in enumerate(self.response["hits"]["hits"]):
                 self.sort_datetime(hit)
                 next_nodes, next_links, incomplete = self.process_path_data(hit)
+                # TODO Better to count links as well
                 if len(self.nodes) + len(next_nodes) > max_nodes:
                     self.the_end = False
                     break
