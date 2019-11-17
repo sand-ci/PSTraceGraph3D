@@ -48,10 +48,13 @@ class Node(ColorSchemeMixin):
         if self.label is None:
             self.label = self.id
 
+    def as_dict(self):
+        return self.__dict__
+
     def register(self, nodes, integrity_buffer):
         if self.id not in integrity_buffer:
             integrity_buffer.append(self.id)
-            nodes.append(self.__dict__)
+            nodes.append(self.as_dict())
 
 
 @dataclass
@@ -95,6 +98,13 @@ class Link(ColorSchemeMixin):
         if self.speed <= 0:
             self.speed = 0.3
 
+    def as_dict(self):
+        data = self.__dict__
+        data["source"] = self.source.id
+        data["target"] = self.target.id
+
+        return data
+
     def register(self, links, links_counter, paths_counter):
         self.path_id = f"{self.path_hash}/{paths_counter[self.path_hash]}"
 
@@ -104,10 +114,7 @@ class Link(ColorSchemeMixin):
         self.curvature = 0.1 * counter
         self.rotation = round(pi * counter / 6, 3)
 
-        self.source = self.source.id
-        self.target = self.target.id
-
-        links.append(self.__dict__)
+        links.append(self.as_dict())
 
 
 class Graph(ColorSchemeMixin):
