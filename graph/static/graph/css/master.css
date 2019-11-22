@@ -1015,3 +1015,25 @@ input:checked + .tg-slider:before {
     border-bottom-right-radius: 5px;
     margin: 0 5px;
 }
+
+#time-filter-container {
+    padding: 0 50px;
+}
+
+/* Ion Time Filter */
+
+.irs--flat .irs-handle > i:first-child {
+    background-color: #bf006c;
+}
+
+.irs--flat .irs-bar {
+    background-color: #bf006c;
+}
+
+.irs--flat .irs-from, .irs--flat .irs-to, .irs--flat .irs-single {
+    background-color: #bf006c;
+}
+
+.irs--flat .irs-from::before, .irs--flat .irs-to::before, .irs--flat .irs-single::before {
+    border-top-color: #bf006c;
+}

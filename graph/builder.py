@@ -221,13 +221,16 @@ class Graph(ColorSchemeMixin):
         self.number_of_hits = 0
         self.the_end = True
 
+        min_datetime, max_datetime = None, None
+
         if self.response["hits"]["hits"]:
             for self.number_of_hits, hit in enumerate(self.response["hits"]["hits"]):
-                self.sort_datetime(hit)
+                min_datetime, max_datetime = self.sort_datetime(hit, min_datetime, max_datetime)
                 next_nodes, next_links, incomplete = self.process_path_data(hit)
                 # TODO Better to count links as well
                 if len(self.nodes) + len(next_nodes) > max_nodes:
                     self.the_end = False
+                    self.min_datetime, self.max_datetime = min_datetime, max_datetime
                     break
                 else:
                     self.nodes += next_nodes
@@ -235,24 +238,30 @@ class Graph(ColorSchemeMixin):
 
                     self.insert_path_to_table_data(hit["_source"], incomplete=incomplete)
 
+        if self.min_datetime == self.max_datetime is None:
+            self.min_datetime, self.max_datetime = min_datetime, max_datetime
+
         self.build_folded_links()
 
         self.number_of_hits += delta
 
-    def sort_datetime(self, hit):
+    @staticmethod
+    def sort_datetime(hit, min_datetime, max_datetime):
         timestamp = hit["_source"]["timestamp"]
         date_time = from_unix_timestamp(timestamp)
-        if self.max_datetime is None:
-            self.max_datetime = date_time
+        if max_datetime is None:
+            max_datetime = date_time
         else:
-            if self.max_datetime < date_time:
-                self.max_datetime = date_time
+            if max_datetime < date_time:
+                max_datetime = date_time
 
-        if self.min_datetime is None:
-            self.min_datetime = date_time
+        if min_datetime is None:
+            min_datetime = date_time
         else:
-            if self.min_datetime > date_time:
-                self.min_datetime = date_time
+            if min_datetime > date_time:
+                min_datetime = date_time
+
+        return min_datetime, max_datetime
 
     def process_path_data(self, hit):
         nodes = []

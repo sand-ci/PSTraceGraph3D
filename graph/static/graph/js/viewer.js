@@ -178,6 +178,7 @@ function BuildGraph(jumpTo) {
                 UpdateToolbar(data['is_previous'], data['is_next']);
                 UpdateFilters(data['aggregations']);
                 UpdatePathsTable(data['table_data']);
+                UpdateTimeFilter(data['from_datetime'], data['to_datetime']);
 
                 let fromDatetime = $('#from-datetime');
                 let toDatetime = $('#to-datetime');
@@ -205,27 +206,38 @@ function FoldUpPaths() {
     let pathClickedBuffer = pathClicked;
 
     table.rows().every( function () {
+        $(this.node()).removeClass("selected");
         let rowPathID = this.data()[9];
         if (rowPathID === pathClickedBuffer) {
             $(this.node()).click();
+            $(this.node()).addClass("selected");
         }
     });
+
+    let rangeSlider = $("#time-filter").data("ionRangeSlider");
 
     if (pathsAreFolded) {
         Graph
             .linkVisibility(link => link['folded'] !== true)
             .linkLabel("distance_mask");
+        rangeSlider.update({
+            disable: false
+        });
         pathsAreFolded = false;
     } else {
         Graph
             .linkVisibility(link => link['folded'] !== false)
             .linkLabel("avg_distance");
+        rangeSlider.update({
+            disable: true
+        });
         pathsAreFolded = true;
     }
 
     table.rows().every( function () {
         let rowPathID = this.data()[9];
         if (rowPathID === pathClickedBuffer) {
+            // TODO eliminate "every" loop
             $(this.node()).click();
         }
     });
@@ -366,12 +378,39 @@ function HighlightPath(row) {
             pathHighlighted.push(pathID);
             $(row).addClass("selected");
         }
+
         Graph
-            .linkDirectionalParticleWidth((link => link["path_id"] === pathID ? 4 : 1))
+            .linkDirectionalParticleWidth((link => link["path_id"] === pathID ? 4 : 0))
             .linkDirectionalParticles((link => link["path_id"] === pathID ? 4 : 0))
             .linkDirectionalParticleSpeed((link => link["path_id"] === pathID ? link["speed"] : 0));
         FillPathInfo(pathID)
     }
+}
+
+function ApplyTimeFilter(data) {
+    let table = $("#paths-table").DataTable();
+    let tableRows = $("#paths-table tr");
+    tableRows.removeClass("selected");
+
+    pathHighlighted = [];
+
+    let fromTime = new Date(data.from);
+    let toTime = new Date(data.to);
+
+    table.rows().every( function () {
+        let rowPathID = this.data()[9];
+        let currentTime = moment(this.data()[4], "DD/MM/YYYY h:mm:ss a");
+        if (fromTime <= currentTime && currentTime <= toTime) {
+            pathHighlighted.push(rowPathID);
+            $(this.node()).addClass("selected");
+        }
+    });
+
+    Graph
+        .linkDirectionalParticleWidth(link => pathHighlighted.indexOf(link["path_id"]) > -1 ? 4 : 0)
+        .linkDirectionalParticles(link => pathHighlighted.indexOf(link["path_id"]) > -1 ? 4 : 0)
+        .linkDirectionalParticleSpeed(link => pathHighlighted.indexOf(link["path_id"]) > -1 ? link["speed"] : 0);
+
 }
 
 let ctx = document.getElementById('path-chart').getContext('2d');
@@ -668,6 +707,31 @@ function SwitchApplyPulse() {
 }
 
 
+function UpdateTimeFilter(fromTime, toTime){
+    let fromTimeUnix = moment(fromTime, "DD/MM/YYYY h:mm:ss a").valueOf();
+    let toTimeUnix = moment(toTime, "DD/MM/YYYY h:mm:ss a").valueOf();
+
+
+    let rangeSlider = $("#time-filter").data("ionRangeSlider");
+    rangeSlider.update({
+        min: fromTimeUnix,
+        max: toTimeUnix,
+        from: fromTimeUnix,
+        to: toTimeUnix,
+    });
+}
+
+function tsToDate (ts) {
+    let d = new Date(ts);
+
+    return d.toLocaleDateString("ru-ru", {
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric"
+    });
+}
+
+
 $(document).ready( function () {
     $(function () {
         let fromDatetime = $('#from-datetime');
@@ -711,6 +775,18 @@ $(document).ready( function () {
         FoldUpPaths()
     });
 
+    $("#time-filter").ionRangeSlider({
+        skin: "flat",
+        type: "double",
+        grid: true,
+        drag_interval: true,
+        disable: true,
+        prettify: tsToDate,
+        onChange: function (data) {
+            ApplyTimeFilter(data)
+        }
+    });
+
     setTimeout(function () {
         DoQuery();
         setTimeout(function () {
@@ -729,7 +805,7 @@ $(document).ready( function () {
                 showGuidelines.css("opacity", 1);
                 setTimeout(function () {
                     $("#info-container").hide()
-                }, 2000);
+                }, 1500);
                 setTimeout(function () {
                     showGuidelines.removeClass("pulse");
                 }, 10000)
