@@ -272,22 +272,22 @@ class Graph(ColorSchemeMixin):
 
         path = hit["_source"]
 
-        self.paths_counter[path.get("hash")] += 1
+        self.paths_counter[path.get("route-sha1")] += 1
         path_fragment = 1
 
-        src_host = Node(path.get("src_host"), path.get("hash"), color="src_color", shape="large_sphere",
+        src_host = Node(path.get("src_host"), path.get("route-sha1"), color="src_color", shape="large_sphere",
                         pos="beginning")
         src_host.register(nodes, self.nodes_integrity_buffer)
 
-        src = Node(path.get("src"), path.get("hash"), color="src_color")
+        src = Node(path.get("src"), path.get("route-sha1"), color="src_color")
         src.register(nodes, self.nodes_integrity_buffer)
 
-        src_host__src__link = Link(src_host, src, path_fragment, path.get("hash"), color="src_color")
+        src_host__src__link = Link(src_host, src, path_fragment, path.get("route-sha1"), color="src_color")
         src_host__src__link.register(links, self.links_counter, self.paths_counter)
 
         previous_node = src
         hops = sorted(zip(path.get("ttls"), path.get("hops"), path.get("rtts")))
-        hops = self.fix_missing_hops(hops, path.get("hash"))
+        hops = self.fix_missing_hops(hops, path.get("route-sha1"))
 
         for i, hop in enumerate(hops, 1):
             path_fragment += 1
@@ -298,35 +298,35 @@ class Graph(ColorSchemeMixin):
             elif i == len(hops):
                 color = "dest_color"
 
-            current_node = Node(hop[1], path.get("hash"), rtt=hop[2], color=color)
+            current_node = Node(hop[1], path.get("route-sha1"), rtt=hop[2], color=color)
             current_node.register(nodes, self.nodes_integrity_buffer)
 
-            link = Link(previous_node, current_node, path_fragment, path.get("hash"), color=color)
+            link = Link(previous_node, current_node, path_fragment, path.get("route-sha1"), color=color)
             link.register(links, self.links_counter, self.paths_counter)
 
             previous_node = current_node
 
         path_fragment += 1
-        dest_host = Node(path.get("dest_host"), path.get("hash"), color="dest_color", shape="large_sphere",
+        dest_host = Node(path.get("dest_host"), path.get("route-sha1"), color="dest_color", shape="large_sphere",
                          pos="ending")
         dest_host.register(nodes, self.nodes_integrity_buffer)
 
         if path.get("dest") != previous_node.id:
-            dest = Node(path.get("dest"), path.get("hash"), color="dest_color")
+            dest = Node(path.get("dest"), path.get("route-sha1"), color="dest_color")
             dest.register(nodes, self.nodes_integrity_buffer)
 
-            previous_node__dest__link = Link(previous_node, dest, path_fragment, path.get("hash"), color="dest_color")
+            previous_node__dest__link = Link(previous_node, dest, path_fragment, path.get("route-sha1"), color="dest_color")
             previous_node__dest__link.register(links, self.links_counter, self.paths_counter)
 
             path_fragment += 1
-            dest__dest_host__link = Link(dest, dest_host, path_fragment, path.get("hash"), color="dest_color")
+            dest__dest_host__link = Link(dest, dest_host, path_fragment, path.get("route-sha1"), color="dest_color")
             dest__dest_host__link.register(links, self.links_counter, self.paths_counter)
 
             self.mark_path_as_incomplete(nodes, links)
 
             incomplete = True
         else:
-            previous_node__dest_host__link = Link(previous_node, dest_host, path_fragment, path.get("hash"),
+            previous_node__dest_host__link = Link(previous_node, dest_host, path_fragment, path.get("route-sha1"),
                                                   color="dest_color")
             previous_node__dest_host__link.register(links, self.links_counter, self.paths_counter)
 
@@ -389,7 +389,7 @@ class Graph(ColorSchemeMixin):
 
     def insert_path_to_table_data(self, path, incomplete=False):
 
-        path_hash = path.get("hash")
+        path_hash = path.get("route-sha1")
 
         table_item = [
             path.get("src", "-"),
