@@ -137,14 +137,6 @@ label {
     position: relative;
 }
 
-.ps-menu-label {
-    /* position: absolute; */
-    /* left: 0; */
-    /* top: 5px; */
-    /* width: 100%; */
-    /* z-index: 100; */
-}
-
 .ps-menu-label h2 {
     font-size: 14px;
     background-color: #bf006c;
@@ -252,8 +244,23 @@ table.dataTable thead th, .query-item table.dataTable thead td {
 }
 
 .dataTables_paginate {
-    margin: 5px;
+    margin: 0;
     padding: 0;
+}
+
+
+h3.filter-header {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#ipv-form .btn {
+    padding: 3px 6px;
+    width: 117px;
+}
+
+#ipv-form .query-item-wrapper {
+    margin-bottom: 5px;
 }
 
 .dataTables_scrollHeadInner{
@@ -288,6 +295,14 @@ table.dataTable thead th, .query-item table.dataTable thead td {
 .paginate_button.disabled {
     background-color: #ffffff !important;
     cursor: not-allowed;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    padding-top: 0 !important;
+}
+
+.dataTables_filter label {
+    margin-bottom: 0 !important;
 }
 
 .dataTables_filter input {
@@ -365,6 +380,11 @@ td.long-td {
     .query-item .input-group {
         width: auto!important;
     }
+}
+
+#ipv-form .query-item {
+    display: flex;
+    justify-content: space-around;
 }
 
 .query-item .input-group {
@@ -660,6 +680,35 @@ td.long-td {
     margin-right: 5px;
 }
 
+#place-lr-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -45px;
+    left: 703px;
+    padding: 5px;
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 0 5px #bfbfbf;
+}
+
+#place-lr-container button {
+    padding: 1px 3px;
+    margin: 0 8px;
+    outline: none;
+
+    transition: all 0.2s ease;
+    -webkit-transition: all 0.2s ease;
+    -moz-transition: all 0.2s ease;
+    -o-transition: all 0.2s ease;
+}
+
+#place-lr-container button:hover {
+    background-color: #00bfb3;
+    color: #ffffff;
+}
+
  /* The switch - the box around the slider */
 .switch {
     position: relative;
@@ -723,94 +772,6 @@ input:checked + .tg-slider:before {
 
 .tg-slider.round:before {
     border-radius: 50%;
-}
-
-/* Preloader */
-
-#preloader {
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 100%;
-    background-color: #ffffff;
-    z-index: 5000
-}
-
-.grid-loader {
-    display: inline-block;
-    position: relative;
-    width: 64px;
-    height: 64px;
-}
-
-.grid-loader div {
-    position: absolute;
-    width: 13px;
-    height: 13px;
-    border-radius: 50%;
-    background: #8d8d8d;
-    animation: grid-loader 1.2s linear infinite;
-}
-
-.grid-loader div:nth-child(1) {
-    top: 6px;
-    left: 6px;
-    background: #b4448b;
-    animation-delay: 0s;
-}
-
-.grid-loader div:nth-child(2) {
-    top: 6px;
-    left: 26px;
-    animation-delay: -0.4s;
-}
-.grid-loader div:nth-child(3) {
-    top: 6px;
-    left: 45px;
-    animation-delay: -0.8s;
-}
-.grid-loader div:nth-child(4) {
-    top: 26px;
-    left: 6px;
-    animation-delay: -0.4s;
-}
-.grid-loader div:nth-child(5) {
-    top: 26px;
-    left: 26px;
-    animation-delay: -0.8s;
-}
-.grid-loader div:nth-child(6) {
-    top: 26px;
-    left: 45px;
-    animation-delay: -1.2s;
-}
-.grid-loader div:nth-child(7) {
-    top: 45px;
-    left: 6px;
-    animation-delay: -0.8s;
-}
-.grid-loader div:nth-child(8) {
-    top: 45px;
-    left: 26px;
-    animation-delay: -1.2s;
-}
-.grid-loader div:nth-child(9) {
-    top: 45px;
-    left: 45px;
-    background: #448cb4;
-    animation-delay: -1.6s;
-}
-
-@keyframes grid-loader {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
 }
 
 #show-guidelines {
@@ -1036,4 +997,31 @@ input:checked + .tg-slider:before {
 
 .irs--flat .irs-from::before, .irs--flat .irs-to::before, .irs--flat .irs-single::before {
     border-top-color: #bf006c;
+}
+
+#dimensions-switcher-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -45px;
+    left: 450px;
+    padding: 5px;
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 0 5px #bfbfbf;
+}
+
+#dimensions-switcher-container .btn {
+    padding: 1px 7px;
+    outline: none !important;
+}
+
+#ipv-form .btn {
+    outline: none !important;
+}
+
+#dimensions-switcher-container label.active, #ipv-form label.active {
+    background-color: #00bfb3;
+    color: white;
 }

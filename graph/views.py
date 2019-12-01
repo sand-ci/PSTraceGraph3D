@@ -11,9 +11,10 @@ class GraphViewer(View):
     template = "graph/viewer/viewer.html"
 
     def get(self, request):
-        data = {}
+        query = request.GET.get("query", "")
+        print(query)
 
-        return render(request, self.template, data)
+        return render(request, self.template, {"query": query})
 
 
 class GraphBuilder(View):
@@ -27,47 +28,47 @@ class GraphBuilder(View):
             "is_next": True
         }
 
-        try:
-            query, jumps, jump_to, current_jump_index, max_nodes = self.get_request_data(request)
+        # try:
+        query, jumps, jump_to, current_jump_index, max_nodes = self.get_request_data(request)
 
-            query = self.prepare_query(query)
-            jump_index = self.prepare_jumps(jumps, current_jump_index, jump_to,  query)
+        query = self.prepare_query(query)
+        jump_index = self.prepare_jumps(jumps, current_jump_index, jump_to,  query)
 
-            data["current_jump_index"] = jump_index
+        data["current_jump_index"] = jump_index
 
-            graph = Graph(query)
-            graph.build(max_nodes)
+        graph = Graph(query)
+        graph.build(max_nodes)
 
-            graph_data = graph.get_graph_data()
-            table_data = graph.table_data
+        graph_data = graph.get_graph_data()
+        table_data = graph.table_data
 
-            if jumps[0] == query["from"]:
-                data["is_previous"] = False
+        if jumps[0] == query["from"]:
+            data["is_previous"] = False
 
-            if jump_to == "next":
-                if graph.number_of_hits == jumps[-1]:
-                    data["is_next"] = False
-
-            if graph.the_end:
+        if jump_to == "next":
+            if graph.number_of_hits == jumps[-1]:
                 data["is_next"] = False
 
-            if graph.number_of_hits > jumps[-1] and not graph.the_end:
-                jumps.append(graph.number_of_hits)
+        if graph.the_end:
+            data["is_next"] = False
 
-            data["from_datetime"] = graph.min_datetime
-            data["to_datetime"] = graph.max_datetime
+        if graph.number_of_hits > jumps[-1] and not graph.the_end:
+            jumps.append(graph.number_of_hits)
 
-            data["graph_data"] = graph_data
-            data["table_data"] = table_data
-            data["jumps"] = jumps
-            data["aggregations"] = graph.get_aggregations()
+        data["from_datetime"] = graph.min_datetime
+        data["to_datetime"] = graph.max_datetime
 
-        except Exception as error:
-            data = {
-                "status": False,
-                "message": "Request failed",
-                "error": str(error)
-            }
+        data["graph_data"] = graph_data
+        data["table_data"] = table_data
+        data["jumps"] = jumps
+        data["aggregations"] = graph.get_aggregations()
+
+        # except Exception as error:
+        #     data = {
+        #         "status": False,
+        #         "message": "Request failed",
+        #         "error": str(error)
+        #     }
 
         return JsonResponse(data)
 

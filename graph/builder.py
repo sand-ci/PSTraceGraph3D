@@ -14,7 +14,7 @@ def from_unix_timestamp(timestamp):
     except ValueError:
         return "-"
 
-    dt = datetime.utcfromtimestamp(int(timestamp)/1000).strftime('%d/%m/%Y %H:%M:%S %p')
+    dt = datetime.fromtimestamp(timestamp/1000).strftime('%d/%m/%Y %H:%M:%S %p')
 
     return dt
 
@@ -25,12 +25,14 @@ class ColorSchemeMixin:
     dest_color = "#448cb4"
     missing_color = "#b00000"
     incomplete_color = "#b00000"
+    clone_color = "#eeb416"
 
 
 @dataclass
 class Node(ColorSchemeMixin):
     id: str
     path_hash: str
+    pos: str = "middle"
     label: str = None
     color: str = None
     rtt: int = None
@@ -66,7 +68,7 @@ class Link(ColorSchemeMixin):
     path_id: str = None
     curvature: float = None
     rotation: float = None
-    distance: float = 20.0
+    distance: float = 0.0
     distance_mask: str = "No data"
     speed: float = 1.0
     color: str = None
@@ -168,7 +170,8 @@ class FoldedUpLink(ColorSchemeMixin):
             self.avg_distance = "No data"
         else:
             self.speed = round(0.1 * (1 / (average_distance ** (1 / 2))), 2)
-            self.avg_distance = f"Avarage: {average_distance}"
+            self.distance_mask = f"Avarage: {average_distance}"
+            self.avg_distance = average_distance
 
         if self.speed < 0.3:
             self.speed = 0.3
@@ -272,7 +275,8 @@ class Graph(ColorSchemeMixin):
         self.paths_counter[path.get("hash")] += 1
         path_fragment = 1
 
-        src_host = Node(path.get("src_host"), path.get("hash"), color="src_color", shape="large_sphere")
+        src_host = Node(path.get("src_host"), path.get("hash"), color="src_color", shape="large_sphere",
+                        pos="beginning")
         src_host.register(nodes, self.nodes_integrity_buffer)
 
         src = Node(path.get("src"), path.get("hash"), color="src_color")
@@ -303,7 +307,8 @@ class Graph(ColorSchemeMixin):
             previous_node = current_node
 
         path_fragment += 1
-        dest_host = Node(path.get("dest_host"), path.get("hash"), color="dest_color", shape="large_sphere")
+        dest_host = Node(path.get("dest_host"), path.get("hash"), color="dest_color", shape="large_sphere",
+                         pos="ending")
         dest_host.register(nodes, self.nodes_integrity_buffer)
 
         if path.get("dest") != previous_node.id:

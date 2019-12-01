@@ -2,36 +2,33 @@
 let shapes = {
     "large_sphere": new THREE.SphereGeometry(8, 32, 32),
     // "torus": new THREE.TorusGeometry(8, 2, 16, 25),
-    // "torus_knot": new THREE.TorusKnotGeometry(6, 1),
+    // "large_sphere": new THREE.TorusKnotGeometry(6, 1),
     "sphere": new THREE.SphereGeometry(5, 32, 32)
 };
 
-let materialsOpacity = {
-    "large_sphere": 0.75,
-    "sphere": 0.5
-};
+// let materialsOpacity = {
+//     "large_sphere": 0.75,
+//     "sphere": 0.5
+// };
 
 const Graph = ForceGraph3D()(document.getElementById('graph-container'))
     .backgroundColor("#ffffff")
     .width($(window).width())
     .height($(window).height())
-    .linkCurvature('curvature')
-    .linkCurveRotation('rotation')
+    .linkCurvature('curvature') // High consuming
+    .linkCurveRotation('rotation') // High consuming
     .nodeLabel('label')
     .nodeColor("color")
     .linkColor("color")
-    .linkDirectionalArrowLength(5)
+    .linkDirectionalArrowLength(4)
     .linkDirectionalArrowRelPos(1)
     .linkVisibility(link => link['folded'] !== false)
-    .linkLabel("avg_distance")
+    .linkLabel("distance_mask")
     .showNavInfo(false)
     .nodeThreeObject(({ shape, color }) => new THREE.Mesh(
         shapes[shape],
         new THREE.MeshBasicMaterial({
-            color: color,
-            depthWrite: true,
-            transparent: true,
-            opacity: materialsOpacity[shape]
+            color: color
         })
     ))
     .onLinkClick(link => {
@@ -46,11 +43,6 @@ const Graph = ForceGraph3D()(document.getElementById('graph-container'))
                 $(this.node()).click();
             }
         });
-    })
-    .onNodeDragEnd(node => {
-        node.fx = node.x;
-        node.fy = node.y;
-        node.fz = node.z;
     });
 
 const linkForce = Graph
@@ -58,10 +50,44 @@ const linkForce = Graph
     .distance(link => (link["avg_distance"] > 0) ? link["avg_distance"] : (link["distance"] > 0) ? link["distance"] : 0.001);
 
 
+function LeftToRight() {
+    let maxX = 0;
+    let minX = 0;
+
+    Graph.graphData().nodes.forEach(node => {
+        if (node.x > maxX) {
+            maxX = node.x;
+        }
+
+        if (node.fx > maxX) {
+            maxX = node.fx
+        }
+
+        if (node.x < minX) {
+            minX = node.x
+        }
+
+        if (node.fx < minX) {
+            minX = node.fx
+        }
+    });
+
+    Graph.graphData().nodes.forEach(node => {
+        if (node.pos === "beginning") {
+            node.fx = minX - 50;
+        }
+
+        if (node.pos === "ending") {
+            node.fx = maxX + 50;
+        }
+    });
+
+    Graph.refresh()
+}
+
 function updateLinkDistance() {
     let power =  $("#distance-power").val();
     linkForce.distance(link => (link["avg_distance"] > 0) ? link["avg_distance"] * power : (link["distance"] > 0) ? link["distance"] * power : 0.001);
-    Graph.numDimensions(3);
 }
 
 let graphData = null;
@@ -73,7 +99,9 @@ let currentQuery = {
     "query": null,
     "current_jump_index": 0,
     "jumps": [],
-    "max_nodes": null
+    "max_nodes": null,
+    "number_of_dimensions": 3,
+    "ipv6": null
 };
 
 let buckets = {
@@ -95,6 +123,50 @@ let filters = [
     ];
 
 let pathsAreFolded = true;
+
+let ctx = document.getElementById('path-chart').getContext('2d');
+let pathChart = new Chart(ctx, {
+    type: 'bar',
+    data: {},
+    options: {
+        legend: {
+            display: false,
+        },
+        title: {
+            display: true,
+            text: "Distances",
+            fontSize: 14
+        },
+        tooltips: {
+            callbacks: {
+                label: function(tooltipItem, data) {
+                    let label = data.datasets[tooltipItem.datasetIndex].label || '';
+                    let pathID = label.slice(6, label.length -1);
+                    let fragment = tooltipItem.index + 1;
+
+                    Graph.linkColor(link => (link['path_id'] === pathID) ? (link["path_fragment"] === fragment) ? "#00bfb3": link["color"]: link["color"]);
+
+                    let table = $("#path-distance-table");
+                    let rows = table.find("tr");
+
+                    for (let i = 0; i < rows.length; i++) {
+                        if (i === tooltipItem.index + 1) {
+                            rows.eq(i).addClass("selected");
+                        } else {
+                            rows.eq(i).removeClass("selected")
+                        }
+                    }
+
+                    if (label) {
+                        label += ': ';
+                    }
+                    label += Math.round(tooltipItem.yLabel * 100) / 100;
+                    return label;
+                }
+            }
+        }
+    },
+});
 
 function GenerateQuery() {
     let query = {
@@ -133,7 +205,121 @@ function GenerateQuery() {
         }
     }
 
+    if (currentQuery.ipv6 !== null && currentQuery.ipv6 !== "null") {
+        query["bool"]["must"].push({
+            "term": {
+                "ipv6": currentQuery.ipv6
+            }
+        })
+    }
+
     return query
+}
+
+function UpdateUrl() {
+    let data = {
+        "query": JSON.stringify(currentQuery.query),
+        "current_jump_index": currentQuery.current_jump_index,
+        "jumps": currentQuery.jumps.join(","),
+        "max_nodes": currentQuery.max_nodes,
+        "number_of_dimensions": currentQuery.number_of_dimensions,
+        "ipv6": currentQuery.ipv6
+    };
+
+    let urlParams = [];
+
+    Object.entries(data).forEach(entry => {
+      let key = entry[0];
+      let value = entry[1];
+
+      urlParams.push(encodeURIComponent(key) + '=' + encodeURIComponent(value))
+
+    });
+
+    window.history.pushState(data, 'queried', window.location.origin + "/graph/viewer?" + urlParams.join("&"));
+}
+
+function DispatchUrlQuery() {
+    let url = new URL(window.location.href);
+    let rawQuery = url.searchParams.get("query");
+
+    currentQuery.number_of_dimensions = url.searchParams.get("number_of_dimensions");
+
+    if (currentQuery.number_of_dimensions && currentQuery.number_of_dimensions !== "null") {
+        let dimensionInputs = $("#dimensions-switcher-container input");
+        for (let i = 0; i < dimensionInputs.length; i++) {
+            if (dimensionInputs.eq(i).data("dimension") === Number(currentQuery.number_of_dimensions)) {
+                dimensionInputs.eq(i).prop("checked");
+                dimensionInputs.eq(i).closest("label").addClass("active")
+            } else {
+                dimensionInputs.eq(i).closest("label").removeClass("active")
+            }
+        }
+    }
+
+    if (rawQuery) {
+        rawQuery = JSON.parse(rawQuery);
+
+        let paramsList = rawQuery["bool"]["must"];
+        for (let i = 0; i < paramsList.length; i ++) {
+
+            if (Object.keys(paramsList[i]).indexOf("range") > -1) {
+                let fromDate = paramsList[i]["range"]["timestamp"]["gte"];
+                let toDate = paramsList[i]["range"]["timestamp"]["lte"];
+
+                $('#from-datetime').data("DateTimePicker").date(new Date(Number(fromDate)));
+                $('#to-datetime').data("DateTimePicker").date(new Date(Number(toDate)));
+            }
+
+            if (Object.keys(paramsList[i]).indexOf("match_phrase") > -1) {
+
+                Object.entries(paramsList[i]["match_phrase"]).forEach(entry => {
+                    let key = entry[0];
+                    let value = entry[1];
+
+                    let bucket = $("#" + key + "-bucket").find(".bucket-wrapper");
+                    if (buckets[key].indexOf(value) < 0) {
+                        bucket.append('<div class="bucket-item" onclick="RemoveFromBucket(this)">' + value + '</div>');
+                        buckets[key].push(value);
+
+                        let indicator = bucket.closest(".query-item").find(".filter-indicator");
+                        indicator.text(bucket.find('.bucket-item').length);
+                    }
+                });
+            }
+        }
+    }
+
+    currentQuery.ipv6 = url.searchParams.get("ipv6");
+    if (currentQuery.ipv6 === null) {
+        currentQuery.ipv6 = "null"
+    }
+    if (currentQuery.ipv6 !== "null") {
+        let ipvInputs = $("#ipv-form input");
+        for (let i = 0; i < ipvInputs.length; i++) {
+            if (String(ipvInputs.eq(i).data("ipv6")) === currentQuery.ipv6) {
+                ipvInputs.eq(i).prop("checked");
+                ipvInputs.eq(i).closest("label").addClass("active")
+            } else {
+                ipvInputs.eq(i).closest("label").removeClass("active")
+            }
+        }
+    }
+}
+
+function SwitchDimensions(element) {
+    let numberDimension = $(element).data("dimension");
+    currentQuery.number_of_dimensions = numberDimension;
+
+    Graph.numDimensions(numberDimension);
+
+    UpdateUrl()
+}
+
+function SwitchIPv(element) {
+    currentQuery.ipv6 = $(element).data("ipv6");
+    SwitchApplyPulse();
+    UpdateUrl()
 }
 
 function DoQuery(jumpTo) {
@@ -161,7 +347,8 @@ function BuildGraph(jumpTo) {
             "current_jump_index": currentQuery.current_jump_index,
             "jumps": currentQuery.jumps.join(","),
             "jump_to": jumpTo,
-            "max_nodes": currentQuery.max_nodes
+            "max_nodes": currentQuery.max_nodes,
+            "ipv6": currentQuery.ipv6
         },
         dataType: "json",
         method: 'GET',
@@ -190,7 +377,8 @@ function BuildGraph(jumpTo) {
                     currentQuery.query = GenerateQuery()
                 }
 
-                SwitchApplyPulse()
+                SwitchApplyPulse();
+                UpdateUrl();
             } else {
                 alert(data["message"])
             }
@@ -217,17 +405,13 @@ function FoldUpPaths() {
     let rangeSlider = $("#time-filter").data("ionRangeSlider");
 
     if (pathsAreFolded) {
-        Graph
-            .linkVisibility(link => link['folded'] !== true)
-            .linkLabel("distance_mask");
+        Graph.linkVisibility(link => link['folded'] !== true);
         rangeSlider.update({
             disable: false
         });
         pathsAreFolded = false;
     } else {
-        Graph
-            .linkVisibility(link => link['folded'] !== false)
-            .linkLabel("avg_distance");
+        Graph.linkVisibility(link => link['folded'] !== false);
         rangeSlider.update({
             disable: true
         });
@@ -246,22 +430,16 @@ function FoldUpPaths() {
 function UpdateGraphData() {
     Graph.nodeColor("color").linkColor("color").graphData(graphData);
     if (pathsAreFolded) {
-        Graph
-            .linkVisibility(link => link['folded'] !== false)
-            .linkLabel("avg_distance");
+        Graph.linkVisibility(link => link['folded'] !== false)
 
     } else {
-        Graph
-            .linkVisibility(link => link['folded'] !== true)
-            .linkLabel("distance_mask");
+        Graph.linkVisibility(link => link['folded'] !== true)
     }
 
-    Graph
-        .linkDirectionalParticleWidth(0)
-        .linkDirectionalParticles(0)
-        .linkDirectionalParticleSpeed(0);
+    Graph.linkDirectionalParticleWidth(0).linkDirectionalParticles(0).linkDirectionalParticleSpeed(0);
 
-    updateLinkDistance()
+    updateLinkDistance();
+    Graph.numDimensions(currentQuery.number_of_dimensions);
 }
 
 function UpdateToolbar(isPrevious, isNext) {
@@ -403,6 +581,8 @@ function ApplyTimeFilter(data) {
         if (fromTime <= currentTime && currentTime <= toTime) {
             pathHighlighted.push(rowPathID);
             $(this.node()).addClass("selected");
+        } else {
+            $(this.node()).removeClass("selected");
         }
     });
 
@@ -412,51 +592,6 @@ function ApplyTimeFilter(data) {
         .linkDirectionalParticleSpeed(link => pathHighlighted.indexOf(link["path_id"]) > -1 ? link["speed"] : 0);
 
 }
-
-let ctx = document.getElementById('path-chart').getContext('2d');
-let pathChart = new Chart(ctx, {
-    type: 'bar',
-    data: {},
-    options: {
-        legend: {
-            display: false,
-        },
-        title: {
-            display: true,
-            text: "Distances",
-            fontSize: 14
-        },
-        tooltips: {
-            callbacks: {
-                label: function(tooltipItem, data) {
-                    let label = data.datasets[tooltipItem.datasetIndex].label || '';
-                    let pathID = label.slice(6, label.length -1);
-                    let fragment = tooltipItem.index + 1;
-
-                    Graph
-                        .linkColor(link => (link['path_id'] === pathID) ? (link["path_fragment"] === fragment) ? "#00bfb3": link["color"]: link["color"]);
-
-                    let table = $("#path-distance-table");
-                    let rows = table.find("tr");
-
-                    for (let i = 0; i < rows.length; i++) {
-                        if (i === tooltipItem.index + 1) {
-                            rows.eq(i).addClass("selected");
-                        } else {
-                            rows.eq(i).removeClass("selected")
-                        }
-                    }
-
-                    if (label) {
-                        label += ': ';
-                    }
-                    label += Math.round(tooltipItem.yLabel * 100) / 100;
-                    return label;
-                }
-            }
-        }
-    },
-});
 
 function FillPathInfo(pathID) {
 
@@ -474,12 +609,31 @@ function FillPathInfo(pathID) {
 
     let labels = [];
     let data = [];
+    let numbers = [];
     let backgroundColors = [];
 
     let fromNode = null;
     let toNode = null;
 
-    let defaultZeroScale = 1;
+    for (let i = 0; i < chartLinks.length; i++) {
+        if (pathsAreFolded) {
+            if (typeof chartLinks[i]["avg_distance"] === "number") {
+                numbers.push(chartLinks[i]["avg_distance"]);
+            }
+        } else {
+            if (typeof chartLinks[i]["distance"] === "number") {
+                numbers.push(chartLinks[i]["distance"]);
+            }
+        }
+    }
+
+    let sum, avg = 0;
+    if (numbers.length) {
+        sum = numbers.reduce(function(a, b) { return a + b; });
+        avg = sum / numbers.length;
+    }
+
+    let defaultZeroScale = avg;
     for (let i = 0; i < chartLinks.length; i++) {
         switch (i) {
             case 0:
@@ -650,7 +804,6 @@ function EmptyBucket(indicator) {
     SwitchApplyPulse()
 }
 
-
 function DataTablesInit(){
     $("#paths-table").DataTable({
         bLengthChange: false,
@@ -705,7 +858,6 @@ function SwitchApplyPulse() {
         apply.addClass("pulse")
     }
 }
-
 
 function UpdateTimeFilter(fromTime, toTime){
     let fromTimeUnix = moment(fromTime, "DD/MM/YYYY h:mm:ss a").valueOf();
@@ -775,6 +927,10 @@ $(document).ready( function () {
         FoldUpPaths()
     });
 
+    $("#dag-switcher").change(function () {
+        SwitchDAGmode()
+    });
+
     $("#time-filter").ionRangeSlider({
         skin: "flat",
         type: "double",
@@ -787,7 +943,16 @@ $(document).ready( function () {
         }
     });
 
+    $("#dimensions-switcher-container input").change(function () {
+        SwitchDimensions(this)
+    });
+
+    $("#ipv-form input").change(function () {
+        SwitchIPv(this)
+    });
+
     setTimeout(function () {
+        DispatchUrlQuery();
         DoQuery();
         setTimeout(function () {
             $("#preloader").css("display", "none");

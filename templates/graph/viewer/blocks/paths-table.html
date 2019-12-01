@@ -19,6 +19,24 @@
                 <span class="tg-slider round"></span>
             </label>
         </div>
+        <div id="dimensions-switcher-container">
+            <span>Number of dimensions:</span>
+            <div class="btn-group btn-group-toggle" style="margin: 0 5px;" data-toggle="buttons">
+                <label class="btn btn-secondary">
+                    <input type="radio" name="options" id="one-dimension" data-dimension="1" autocomplete="off"> 1
+                </label>
+                <label class="btn btn-secondary">
+                    <input type="radio" name="options" id="two-dimension" data-dimension="2" autocomplete="off"> 2
+                </label>
+                <label class="btn btn-secondary active">
+                    <input type="radio" name="options" id="three-dimension" data-dimension="3" autocomplete="off" checked> 3
+                </label>
+            </div>
+        </div>
+        <div id="place-lr-container">
+            <span>From left to right:</span>
+            <button class="btn btn-secondary" onclick="LeftToRight()">Allocate</button>
+        </div>
         <div id="time-filter-container">
             <label for="time-filter" style="display: none">Time filter</label>
             <input id="time-filter">

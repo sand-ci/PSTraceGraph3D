@@ -9,7 +9,7 @@
     <div class="ps-menu-wrapper ps-container column-space-between">
         <div>
             <div id="datetime-range-form" class="query-item">
-                <h3>Datetime range</h3>
+                <h3 class="filter-header">Datetime range</h3>
                 <div class="query-item-wrapper">
                     <div class="datetime-group">
                         <label for="from-datetime-input">From:</label>
@@ -28,6 +28,22 @@
                                 <span class="glyphicon glyphicon-calendar"></span>
                             </span>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div id="ipv-form" class="query-item">
+                <h3 class="filter-header">IP version filter</h3>
+                <div class="query-item-wrapper">
+                    <div class="btn-group btn-group-toggle" style="margin: 0 5px;" data-toggle="buttons">
+                        <label class="btn btn-secondary">
+                            <input type="radio" name="options" id="ipv4" data-ipv6="false" autocomplete="off"> IPv4
+                        </label>
+                        <label class="btn btn-secondary">
+                            <input type="radio" name="options" id="ipv6" data-ipv6="true" autocomplete="off"> IPv6
+                        </label>
+                        <label class="btn btn-secondary active">
+                            <input type="radio" name="options" id="ipv4-6" data-ipv6="null" autocomplete="off" checked> IPv4 & IPv6
+                        </label>
                     </div>
                 </div>
             </div>
