@@ -16,7 +16,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Reading config
-config_path = "PSTraceGraph3D/config-1.ini"
+config_path = "/usr/src/app/config/config.ini"
 with open(config_path, "r", encoding="utf-8") as file:
     content = ["".join(line.split()) for line in file.readlines() if line]
     config = {key: value for key, value in [(line.split(":")[0], ":".join(line.split(":")[1:])) for line in content]}
