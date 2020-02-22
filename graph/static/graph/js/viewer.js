@@ -25,6 +25,7 @@ const Graph = ForceGraph3D()(document.getElementById('graph-container'))
     .linkVisibility(link => link['folded'] !== false)
     .linkLabel("distance_mask")
     .showNavInfo(false)
+    .numDimensions(3)
     .nodeThreeObject(({ shape, color }) => new THREE.Mesh(
         shapes[shape],
         new THREE.MeshBasicMaterial({
@@ -248,7 +249,7 @@ function DispatchUrlQuery() {
     if (currentQuery.number_of_dimensions && currentQuery.number_of_dimensions !== "null") {
         let dimensionInputs = $("#dimensions-switcher-container input");
         for (let i = 0; i < dimensionInputs.length; i++) {
-            if (dimensionInputs.eq(i).data("dimension") === Number(currentQuery.number_of_dimensions)) {
+            if (Number(dimensionInputs.eq(i).data("dimension")) === Number(currentQuery.number_of_dimensions)) {
                 dimensionInputs.eq(i).prop("checked");
                 dimensionInputs.eq(i).closest("label").addClass("active")
             } else {
