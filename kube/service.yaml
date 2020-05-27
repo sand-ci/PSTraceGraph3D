@@ -31,7 +31,7 @@ spec:
     - perfsonar.uc.ssl-hep.org
     secretName: sxfe-cert
   rules:
-    - host: perfsonar.uc.ssl-hep.org
+    - host: perfsonar-old.uc.ssl-hep.org
       http:
         paths:
         - path: /
